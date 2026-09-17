@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RoboSafe — Embodied AI Safety Harness</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #0a0e1a;
+    color: #e0e7ff;
+    min-height: 100vh;
+  }
+  .container { max-width: 1100px; margin: 0 auto; padding: 40px 20px; }
+
+  /* Header */
+  header { text-align: center; margin-bottom: 36px; }
+  .logo {
+    font-size: 34px; font-weight: 800;
+    background: linear-gradient(135deg, #00ff88, #00d4ff, #7c3aed);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 6px;
+  }
+  .subtitle { color: #64748b; font-size: 14px; }
+
+  /* Flow diagram */
+  .flow {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    margin-bottom: 32px; flex-wrap: wrap;
+  }
+  .flow-node {
+    padding: 10px 18px; border-radius: 30px; font-size: 13px; font-weight: 600;
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  .flow-brain { background: rgba(124,58,237,0.15); border-color: rgba(124,58,237,0.4); color: #c4b5fd; }
+  .flow-safe { background: rgba(0,255,136,0.15); border-color: rgba(0,255,136,0.4); color: #6ee7b7; }
+  .flow-robot { background: rgba(0,212,255,0.15); border-color: rgba(0,212,255,0.4); color: #67e8f9; }
+  .flow-arrow { color: #475569; font-size: 18px; }
+
+  /* Tabs */
+  .tabs { display: flex; justify-content: center; gap: 10px; margin-bottom: 28px; }
+  .tab-btn {
+    padding: 10px 24px; border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.03); color: #64748b;
+    border-radius: 30px; cursor: pointer; font-size: 14px;
+    transition: all 0.25s;
+  }
+  .tab-btn:hover { background: rgba(255,255,255,0.08); }
+  .tab-btn.active {
+    background: linear-gradient(135deg, #00ff88, #00d4ff);
+    color: #0a0e1a; border-color: transparent; font-weight: 700;
+  }
+
+  /* Cards */
+  .card {
+    background: rgba(255,255,255,0.03); backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 16px; padding: 28px; display: none;
+  }
+  .card.active { display: block; }
+  .card h2 { font-size: 18px; margin-bottom: 20px; }
+
+  /* Scenario buttons */
+  .scenarios { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 24px; }
+  .scenario-btn {
+    padding: 16px; border-radius: 12px; cursor: pointer; font-size: 14px;
+    border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.02);
+    color: #e0e7ff; transition: all 0.25s; text-align: left;
+  }
+  .scenario-btn:hover { background: rgba(255,255,255,0.06); border-color: rgba(0,255,136,0.3); }
+  .scenario-btn .scenario-title { font-weight: 600; margin-bottom: 4px; }
+  .scenario-btn .scenario-desc { font-size: 12px; color: #64748b; }
+
+  /* Result */
+  .result-box { margin-top: 20px; display: none; }
+  .result-box.show { display: block; }
+
+  .status-banner {
+    text-align: center; padding: 20px; border-radius: 12px; margin-bottom: 16px;
+    font-size: 16px; font-weight: 700;
+  }
+  .status-approved { background: rgba(0,255,136,0.1); border: 1px solid rgba(0,255,136,0.3); color: #6ee7b7; }
+  .status-blocked { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: #fca5a5; }
+
+  .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+  .detail-item {
+    background: rgba(0,0,0,0.2); border-radius: 10px; padding: 14px;
+  }
+  .detail-item .label { font-size: 11px; color: #64748b; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .detail-item .value { font-size: 13px; color: #e0e7ff; }
+
+  .rules-list { margin-top: 12px; }
+  .rule-item {
+    display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+    border-radius: 8px; margin-bottom: 6px; font-size: 13px;
+    border: 1px solid rgba(255,255,255,0.05);
+  }
+  .rule-pass { background: rgba(0,255,136,0.05); }
+  .rule-fail { background: rgba(239,68,68,0.05); }
+  .rule-icon { font-size: 16px; }
+
+  /* Trace timeline */
+  .trace-list { margin-top: 12px; max-height: 400px; overflow-y: auto; }
+  .trace-item {
+    padding: 12px; border-radius: 8px; margin-bottom: 6px;
+    background: rgba(0,0,0,0.15); font-size: 13px;
+    border-left: 3px solid #475569;
+  }
+  .trace-item.validation { border-left-color: #00d4ff; }
+  .trace-item.fallback { border-left-color: #f59e0b; }
+  .trace-item.outcome-blocked { border-left-color: #ef4444; }
+  .trace-item.outcome-approved { border-left-color: #00ff88; }
+  .trace-item .trace-event { font-weight: 600; margin-bottom: 4px; }
+  .trace-item .trace-time { font-size: 11px; color: #475569; }
+
+  /* Stats */
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .stat-card {
+    text-align: center; padding: 20px; border-radius: 12px;
+    background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05);
+  }
+  .stat-card .num {
+    font-size: 28px; font-weight: 800;
+    background: linear-gradient(135deg, #00ff88, #00d4ff);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .stat-card .label { font-size: 12px; color: #64748b; margin-top: 4px; }
+
+  /* Code */
+  pre {
+    background: #0d1117; border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 10px; padding: 16px; font-size: 12px;
+    overflow-x: auto; color: #c9d1d9;
+    font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace;
+  }
+  code { color: #79c0ff; }
+  .code-label { font-size: 11px; color: #64748b; margin: 12px 0 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* Fallback box */
+  .fallback-box {
+    margin-top: 12px; padding: 14px; border-radius: 10px;
+    background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2);
+  }
+  .fallback-box .label { font-size: 11px; color: #f59e0b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+
+  @media (max-width: 640px) {
+    .scenarios { grid-template-columns: 1fr; }
+    .detail-grid { grid-template-columns: 1fr; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="logo">🛡️ RoboSafe</div>
+    <div class="subtitle">Embodied AI Safety Harness for Humanoid Robots</div>
+  </header>
+
+  <!-- Flow diagram -->
+  <div class="flow">
+    <div class="flow-node flow-brain">🧠 AI Brain</div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-node flow-safe">🛡️ RoboSafe</div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-node flow-robot">🤖 Robot</div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="demo">Live Demo</button>
+    <button class="tab-btn" data-tab="rules">Safety Rules</button>
+    <button class="tab-btn" data-tab="trace">Execution Trace</button>
+    <button class="tab-btn" data-tab="api">API & SDK</button>
+  </div>
+
+  <!-- Demo Tab -->
+  <div class="card active" id="tab-demo">
+    <h2>🧪 Safety Validation Playground</h2>
+    <p style="color:#64748b;font-size:13px;margin-bottom:20px;">Click a scenario to simulate an AI brain action and see how the safety engine reacts.</p>
+
+    <div class="scenarios">
+      <div class="scenario-btn" onclick="runScenario('safe')">
+        <div class="scenario-title">✅ Safe Grasp</div>
+        <div class="scenario-desc">Robot grasps a cup at normal speed — should pass all checks</div>
+      </div>
+      <div class="scenario-btn" onclick="runScenario('fast')">
+        <div class="scenario-title">⚠️ Speed Violation</div>
+        <div class="scenario-desc">Robot moves arm at 3.5 m/s — exceeds speed limit</div>
+      </div>
+      <div class="scenario-btn" onclick="runScenario('hot')">
+        <div class="scenario-title">🔥 Thermal Danger</div>
+        <div class="scenario-desc">Robot tries to grab a 80°C object — thermal safety block</div>
+      </div>
+      <div class="scenario-btn" onclick="runScenario('human')">
+        <div class="scenario-title">👤 Human Too Close</div>
+        <div class="scenario-desc">Human within 0.1m — collision risk abort</div>
+      </div>
+      <div class="scenario-btn" onclick="runScenario('force')">
+        <div class="scenario-title">💪 Excessive Force</div>
+        <div class="scenario-desc">Robot applies 80N force — exceeds 50N limit</div>
+      </div>
+      <div class="scenario-btn" onclick="runScenario('boundary')">
+        <div class="scenario-title">📍 Out of Workspace</div>
+        <div class="scenario-desc">Target at [3.0, -1.5, 0.8] — outside boundary</div>
+      </div>
+    </div>
+
+    <div class="result-box" id="demo-result">
+      <div class="status-banner" id="status-banner"></div>
+      <div class="detail-grid">
+        <div class="detail-item">
+          <div class="label">Action</div>
+          <div class="value" id="detail-action"></div>
+        </div>
+        <div class="detail-item">
+          <div class="label">Source</div>
+          <div class="value" id="detail-source"></div>
+        </div>
+      </div>
+      <div class="rules-list" id="rules-list"></div>
+      <div class="fallback-box" id="fallback-box" style="display:none;">
+        <div class="label">🔄 Fallback Action Triggered</div>
+        <div id="fallback-detail" style="font-size:13px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rules Tab -->
+  <div class="card" id="tab-rules">
+    <h2>📋 Registered Safety Rules</h2>
+    <p style="color:#64748b;font-size:13px;margin-bottom:16px;">Built-in rules for humanoid robot safety. Add custom rules via API.</p>
+    <div id="rules-container"></div>
+  </div>
+
+  <!-- Trace Tab -->
+  <div class="card" id="tab-trace">
+    <h2>📜 Full Execution Trace</h2>
+    <p style="color:#64748b;font-size:13px;margin-bottom:16px;">Complete audit log: AI brain output → safety validation → execution → fallback → outcome.</p>
+    <div class="trace-list" id="trace-container"></div>
+  </div>
+
+  <!-- API Tab -->
+  <div class="card" id="tab-api">
+    <h2>🔌 API & Python SDK</h2>
+
+    <div class="code-label">Python SDK — Quick Start</div>
+<pre><code>pip install robo-safe
+
+from robo_safe import SafetyEngine, Action
+
+engine = SafetyEngine()
+action = Action(name="move_arm", params={"speed": 1.5})
+result = engine.validate(action)
+
+print(result.status)  # ExecutionStatus.APPROVED
+print(result.blocked) # False</code></pre>
+
+    <div class="code-label">REST API — Validate Action</div>
+<pre><code>POST /api/validate
+{
+  "name": "grasp_object",
+  "params": {"speed": 3.5, "force": 20, "target": [0.5, 0.2, 0.8]},
+  "source": "llm"
+}</code></pre>
+
+    <div class="code-label">REST API — Execute with Monitoring</div>
+<pre><code>POST /api/execute
+{
+  "name": "move_arm",
+  "params": {"speed": 1.0, "force": 15},
+  "sensor_data": {"force": 12, "speed": 1.1, "temperature": 25, "human_distance": 1.5}
+}</code></pre>
+
+    <div class="code-label">REST API — List Safety Rules</div>
+<pre><code>GET /api/rules
+GET /api/trace
+GET /api/stats</code></pre>
+
+    <div class="code-label">Add Custom Rule</div>
+<pre><code>POST /api/rules
+{
+  "name": "my_custom_rule",
+  "expression": "params.get('weight', 0) &lt; 5",
+  "message": "Object weight exceeds 5kg",
+  "severity": "block"
+}</code></pre>
+
+    <div style="margin-top:24px;">
+      <div class="stats-grid" id="stats-grid">
+        <div class="stat-card"><div class="num" id="s-total">0</div><div class="label">Total Events</div></div>
+        <div class="stat-card"><div class="num" id="s-blocked">0</div><div class="label">Blocked</div></div>
+        <div class="stat-card"><div class="num" id="s-fallback">0</div><div class="label">Fallbacks</div></div>
+        <div class="stat-card"><div class="num" id="s-rate">0%</div><div class="label">Block Rate</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SCENARIOS = {
+  safe:    { name: "grasp_cup", params: { speed: 1.0, force: 15, target: [0.5, 0.2, 0.8], object_temp: 25, human_distance: 1.5 }, source: "llm", desc: "Robot grasps a cup at 1.0 m/s with 15N force" },
+  fast:    { name: "move_arm", params: { speed: 3.5, force: 20, target: [0.6, 0.1, 0.9] }, source: "llm", desc: "Robot moves arm at 3.5 m/s — exceeds 2.0 limit" },
+  hot:     { name: "grasp_object", params: { speed: 0.8, force: 10, target: [0.4, 0.2, 0.6], object_temp: 80, human_distance: 1.0 }, source: "llm", desc: "Robot grabs a 80°C object — thermal danger" },
+  human:   { name: "move_arm", params: { speed: 0.5, force: 10, target: [0.3, 0.2, 0.5], human_distance: 0.1 }, source: "llm", desc: "Human within 0.1m during motion" },
+  force:   { name: "push_object", params: { speed: 0.5, force: 80, target: [0.5, 0.0, 0.3] }, source: "llm", desc: "Robot applies 80N force — exceeds 50N limit" },
+  boundary:{ name: "move_arm", params: { speed: 0.8, force: 10, target: [3.0, -1.5, 0.8] }, source: "llm", desc: "Target outside workspace boundary" }
+};
+
+// Tab switching
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    if (btn.dataset.tab === 'rules') loadRules();
+    if (btn.dataset.tab === 'trace') loadTrace();
+    if (btn.dataset.tab === 'api') loadStats();
+  });
+});
+
+async function runScenario(key) {
+  const s = SCENARIOS[key];
+  const res = await fetch('/api/validate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: s.name, params: s.params, source: s.source })
+  });
+  const result = await res.json();
+  displayResult(result, s);
+}
+
+function displayResult(result, scenario) {
+  const banner = document.getElementById('status-banner');
+  const box = document.getElementById('demo-result');
+  const rulesList = document.getElementById('rules-list');
+  const fallbackBox = document.getElementById('fallback-box');
+
+  const isBlocked = result.status === 'blocked' || result.status === 'fallback';
+  banner.className = 'status-banner ' + (isBlocked ? 'status-blocked' : 'status-approved');
+  banner.innerHTML = isBlocked ? '🚫 BLOCKED' : '✅ APPROVED';
+  banner.innerHTML += '<br><span style="font-size:13px;font-weight:400;">' + result.message + '</span>';
+
+  document.getElementById('detail-action').textContent = scenario.name + ' (' + JSON.stringify(scenario.params) + ')';
+  document.getElementById('detail-source').textContent = scenario.source;
+
+  // Rules
+  const passed = result.passed_rules || [];
+  const failed = result.failed_rules || [];
+  let rulesHtml = '';
+  passed.forEach(r => {
+    rulesHtml += `<div class="rule-item rule-pass"><span class="rule-icon">✅</span> ${r}</div>`;
+  });
+  failed.forEach(r => {
+    rulesHtml += `<div class="rule-item rule-fail"><span class="rule-icon">❌</span> ${r}</div>`;
+  });
+  rulesList.innerHTML = rulesHtml;
+
+  // Fallback
+  if (result.fallback_action) {
+    fallbackBox.style.display = 'block';
+    document.getElementById('fallback-detail').innerHTML =
+      `<strong>Action:</strong> ${result.fallback_action.name}<br><strong>Params:</strong> ${JSON.stringify(result.fallback_action.params)}<br><strong>Reason:</strong> ${result.message}`;
+  } else {
+    fallbackBox.style.display = 'none';
+  }
+
+  box.classList.add('show');
+}
+
+async function loadRules() {
+  const res = await fetch('/api/rules');
+  const data = await res.json();
+  document.getElementById('rules-container').innerHTML = data.rules.map(r =>
+    `<div class="rule-item"><span class="rule-icon">${r.severity === 'block' ? '🛑' : '⚠️'}</span>
+      <div><div style="font-weight:600;">${r.name}</div><div style="font-size:12px;color:#64748b;">${r.message}</div></div>
+      <span style="margin-left:auto;font-size:11px;padding:2px 8px;border-radius:4px;background:${r.severity==='block'?'rgba(239,68,68,0.15)':'rgba(234,179,8,0.15)'};color:${r.severity==='block'?'#fca5a5':'#fcd34d'};">${r.severity}</span>
+    </div>`
+  ).join('');
+}
+
+async function loadTrace() {
+  const res = await fetch('/api/trace');
+  const data = await res.json();
+  if (!data.trace || data.trace.length === 0) {
+    document.getElementById('trace-container').innerHTML = '<p style="color:#64748b;text-align:center;padding:20px;">No events yet. Run a scenario in the Demo tab first.</p>';
+    return;
+  }
+  const reversed = [...data.trace].reverse();
+  document.getElementById('trace-container').innerHTML = reversed.map(e => {
+    let cls = 'trace-item ' + e.event;
+    if (e.event === 'outcome') cls += ' outcome-' + e.outcome;
+    let detail = '';
+    if (e.event === 'validation') {
+      detail = `Action: ${e.action.name} | Status: ${e.status} | Passed: ${e.passed_rules.length} | Failed: ${e.failed_rules.length}`;
+    } else if (e.event === 'fallback') {
+      detail = `Trigger: ${e.trigger} | Strategy: ${e.strategy} | Fallback: ${e.fallback_action.name}`;
+    } else if (e.event === 'outcome') {
+      detail = `${e.action} → ${e.outcome} ${e.detail ? '— ' + e.detail : ''}`;
+    } else {
+      detail = JSON.stringify(e).substring(0, 200);
+    }
+    return `<div class="${cls}"><div class="trace-event">${e.event.toUpperCase()}</div><div class="trace-time">${new Date(e.timestamp * 1000).toLocaleTimeString()}</div><div style="margin-top:4px;">${detail}</div></div>`;
+  }).join('');
+}
+
+async function loadStats() {
+  const res = await fetch('/api/stats');
+  const s = await res.json();
+  document.getElementById('s-total').textContent = s.total_events || 0;
+  document.getElementById('s-blocked').textContent = s.blocked || 0;
+  document.getElementById('s-fallback').textContent = s.fallbacks || 0;
+  document.getElementById('s-rate').textContent = s.block_rate || '0%';
+}
+</script>
+</body>
+</html>
