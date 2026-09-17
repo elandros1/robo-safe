@@ -8,28 +8,28 @@
 
 ---
 
-## ⚡ Quick Start（30 秒上手）
+## ⚡ Quick Start (30 seconds)
 
-**方式一：克隆并启动 Web 服务**（零依赖，纯 Python 标准库）
+**Option 1: Clone and start the web dashboard** (zero dependencies, pure Python stdlib)
 
 ```bash
 git clone https://github.com/elandros1/robo-safe.git
 cd robo-safe && python3 -m robo_safe.server
 ```
 
-打开浏览器访问 `http://localhost:3001` 即可使用安全验证看板。
+Open `http://localhost:3001` in your browser to access the safety validation dashboard.
 
-**方式二：在你的代码中调用**（3 行 Python 代码即可拦截危险动作）
+**Option 2: Use in your code** (3 lines of Python to intercept dangerous actions)
 
 ```python
 from robo_safe import SafetyEngine, Action
 
-engine = SafetyEngine()                          # 加载 7 条内置安全规则
-result = engine.validate(Action("move_arm", {"speed": 3.5}))  # 超速 → 自动拦截
+engine = SafetyEngine()                          # Load 7 built-in safety rules
+result = engine.validate(Action("move_arm", {"speed": 3.5}))  # Speed exceeded -> auto-blocked
 print(result.blocked, result.fallback_action.name)  # True "safe_stop"
 ```
 
-> 零第三方依赖，Python 3.8+ 开箱即用。
+> Zero third-party dependencies. Python 3.8+ ready out of the box.
 
 ---
 
@@ -56,7 +56,7 @@ RoboBench evaluation (2026) shows that **execution-level fault diagnosis scores 
 
 ## 🚀 More Examples
 
-### Python SDK — 完整验证流程
+### Python SDK — Full validation flow
 
 ```python
 from robo_safe import SafetyEngine, Action
@@ -76,13 +76,13 @@ print(result.message)   # "Blocked by: speed_limit"
 print(result.fallback_action.name)  # "safe_stop"
 ```
 
-### Web Dashboard — 带监控的执行模式
+### Web Dashboard — Execution mode with monitoring
 
 ```bash
-# 从源码启动（零依赖）
+# Start from source (zero dependencies)
 git clone https://github.com/elandros1/robo-safe.git
 cd robo-safe && python3 -m robo_safe.server
-# 浏览器打开 http://localhost:3001
+# Open http://localhost:3001 in your browser
 ```
 
 ---
