@@ -1,0 +1,133 @@
+# ─────────────────────────────────────────────────────────────
+# RoboSafe Issue Auto-Reply: 新 Issue 自动回复 + 自动打标签
+# 触发条件: 有人提交新 Issue 或新 PR
+# 功能:
+#   1. 自动回复感谢信息 + 引导贡献者
+#   2. 根据 Issue 标题关键词自动打标签 (bug/enhancement/question)
+#   3. 如果是 PR，自动欢迎并提示 review 流程
+# ─────────────────────────────────────────────────────────────
+
+name: 🤖 Issue Auto-Reply & Labeling
+
+on:
+  issues:
+    types: [opened]
+  pull_request:
+    types: [opened]
+
+permissions:
+  issues: write
+  pull-requests: write
+  contents: read
+
+jobs:
+  auto-reply:
+    name: 💬 Auto-reply to new issues and PRs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Auto-label issue by keywords
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue || context.payload.pull_request;
+            const title = (issue.title || '').toLowerCase();
+            const body = (issue.body || '').toLowerCase();
+            const text = `${title} ${body}`;
+            const labels = [];
+
+            // 关键词匹配 → 自动打标签
+            if (/bug|error|crash|fail|broken|incorrect|wrong/.test(text)) {
+              labels.push('bug');
+            }
+            if (/feature|enhance|improve|add|new|request|wish/.test(text)) {
+              labels.push('enhancement');
+            }
+            if (/question|how|help|why|what|where|confused|understand/.test(text)) {
+              labels.push('question');
+            }
+            if (/security|vulnerability|cve|exploit|attack/.test(text)) {
+              labels.push('security');
+              labels.push('priority:high');
+            }
+            if (/test|coverage|pytest|unit test/.test(text)) {
+              labels.push('testing');
+            }
+            if (/doc|readme|tutorial|example|guide/.test(text)) {
+              labels.push('documentation');
+            }
+            if (/good first issue|beginner|starter/.test(text)) {
+              labels.push('good first issue');
+            }
+
+            if (labels.length > 0) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                labels: labels,
+              });
+            }
+
+      - name: Reply to new Issue
+        if: github.event_name == 'issues'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issueNumber = context.payload.issue.number;
+            const author = context.payload.issue.user.login;
+
+            const reply = [
+              `Hi @${author}! 👋`,
+              '',
+              'Thanks for opening this issue!',
+              '',
+              'I\'ll review it as soon as possible. In the meantime:',
+              '- ⭐ Star the repo if you find it useful',
+              '- 📖 Check the [Quick Start](https://github.com/elandros1/robo-safe#quick-start) in the README',
+              `- 🧪 Run \`cd /workspace/robo-safe && python3 -m pytest tests/ -v\` to verify your setup`,
+              '',
+              'A maintainer will respond within 48 hours.',
+              '',
+              '_This is an automated reply. To disable it, remove `.github/workflows/issue-auto-reply.yml`._'
+            ].join('\n');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+              body: reply,
+            });
+
+      - name: Reply to new PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = context.payload.pull_request.number;
+            const author = context.payload.pull_request.user.login;
+
+            const reply = [
+              `Hi @${author}! 🎉`,
+              '',
+              'Thanks for your contribution to RoboSafe!',
+              '',
+              'Before merging, please ensure:',
+              '- [ ] All tests pass: `python3 -m pytest tests/ -v`',
+              '- [ ] Code follows the existing style (check `robo_safe/` modules)',
+              '- [ ] No `eval()` or security regressions',
+              '- [ ] Added tests for new functionality',
+              '',
+              'A maintainer will review your PR within 48 hours.',
+              '',
+              '_This is an automated reply._'
+            ].join('\n');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              body: reply,
+            });
