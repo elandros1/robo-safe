@@ -8,6 +8,31 @@
 
 ---
 
+## ⚡ Quick Start（30 秒上手）
+
+**方式一：克隆并启动 Web 服务**（零依赖，纯 Python 标准库）
+
+```bash
+git clone https://github.com/elandros1/robo-safe.git
+cd robo-safe && python3 -m robo_safe.server
+```
+
+打开浏览器访问 `http://localhost:3001` 即可使用安全验证看板。
+
+**方式二：在你的代码中调用**（3 行 Python 代码即可拦截危险动作）
+
+```python
+from robo_safe import SafetyEngine, Action
+
+engine = SafetyEngine()                          # 加载 7 条内置安全规则
+result = engine.validate(Action("move_arm", {"speed": 3.5}))  # 超速 → 自动拦截
+print(result.blocked, result.fallback_action.name)  # True "safe_stop"
+```
+
+> 零第三方依赖，Python 3.8+ 开箱即用。
+
+---
+
 ## 📖 Overview
 
 As humanoid robots (Figure AI, Tesla Optimus, Unitree, Boston Dynamics) become more autonomous, their AI brains (LLM/VLA models) can output actions that are **dangerous** — too fast, too much force, targeting a human, or grabbing a hot object.
@@ -29,15 +54,9 @@ RoboBench evaluation (2026) shows that **execution-level fault diagnosis scores 
 
 ---
 
-## 🚀 Quick Start
+## 🚀 More Examples
 
-### Install
-
-```bash
-pip install robo-safe
-```
-
-### Python SDK
+### Python SDK — 完整验证流程
 
 ```python
 from robo_safe import SafetyEngine, Action
@@ -57,18 +76,13 @@ print(result.message)   # "Blocked by: speed_limit"
 print(result.fallback_action.name)  # "safe_stop"
 ```
 
-### Web Dashboard
+### Web Dashboard — 带监控的执行模式
 
 ```bash
-robo-safe  # starts on http://localhost:3001
-```
-
-Or from source:
-
-```bash
+# 从源码启动（零依赖）
 git clone https://github.com/elandros1/robo-safe.git
-cd robo-safe
-python -m robo_safe.server
+cd robo-safe && python3 -m robo_safe.server
+# 浏览器打开 http://localhost:3001
 ```
 
 ---

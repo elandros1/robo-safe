@@ -22,21 +22,77 @@ Usage:
     # result.blocked == True, result.reason == "Speed exceeds 2.0 m/s..."
 """
 
-from .engine import SafetyEngine, Action, SafetyRule, ValidationResult, ExecutionStatus
-from .monitor import RuntimeMonitor
-from .fallback import FallbackController
+# 本地模块 —— 核心组件
+from .engine import (
+    SafetyEngine,
+    Action,
+    SafetyRule,
+    ValidationResult,
+    ExecutionStatus,
+)
+from .monitor import RuntimeMonitor, MonitorState, ExecutionSnapshot
+from .fallback import FallbackController, FallbackPlan
 from .trace_logger import TraceLogger
+from .safe_eval import safe_eval, SafeEvalError
 from .server import create_app
 
-__version__ = "1.0.0"
+# 本地模块 —— 基础设施
+from .config import (
+    SafetyThresholds,
+    ServerConfig,
+    DEFAULT_THRESHOLDS,
+    DEFAULT_SERVER_CONFIG,
+)
+from .exceptions import (
+    RoboSafeError,
+    RuleError,
+    RuleAlreadyExistsError,
+    RuleNotFoundError,
+    MaxRulesExceededError,
+    InvalidExpressionError,
+    InvalidActionError,
+    MonitorStateError,
+    SensorDataError,
+    FallbackStrategyError,
+    MaxRetriesExceededError,
+)
+from .logger import get_logger
+
+__version__ = "2.0.0"
+
 __all__ = [
+    # 核心组件
     "SafetyEngine",
     "Action",
     "SafetyRule",
     "ValidationResult",
     "ExecutionStatus",
     "RuntimeMonitor",
+    "MonitorState",
+    "ExecutionSnapshot",
     "FallbackController",
+    "FallbackPlan",
     "TraceLogger",
+    "safe_eval",
+    "SafeEvalError",
     "create_app",
+    # 配置
+    "SafetyThresholds",
+    "ServerConfig",
+    "DEFAULT_THRESHOLDS",
+    "DEFAULT_SERVER_CONFIG",
+    # 异常
+    "RoboSafeError",
+    "RuleError",
+    "RuleAlreadyExistsError",
+    "RuleNotFoundError",
+    "MaxRulesExceededError",
+    "InvalidExpressionError",
+    "InvalidActionError",
+    "MonitorStateError",
+    "SensorDataError",
+    "FallbackStrategyError",
+    "MaxRetriesExceededError",
+    # 日志
+    "get_logger",
 ]

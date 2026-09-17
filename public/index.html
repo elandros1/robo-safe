@@ -299,6 +299,13 @@ GET /api/stats</code></pre>
 </div>
 
 <script>
+// ─── HTML 转义函数（防止 XSS）───
+function esc(str) {
+  const div = document.createElement('div');
+  div.textContent = String(str);
+  return div.innerHTML;
+}
+
 const SCENARIOS = {
   safe:    { name: "grasp_cup", params: { speed: 1.0, force: 15, target: [0.5, 0.2, 0.8], object_temp: 25, human_distance: 1.5 }, source: "llm", desc: "Robot grasps a cup at 1.0 m/s with 15N force" },
   fast:    { name: "move_arm", params: { speed: 3.5, force: 20, target: [0.6, 0.1, 0.9] }, source: "llm", desc: "Robot moves arm at 3.5 m/s — exceeds 2.0 limit" },
@@ -341,7 +348,7 @@ function displayResult(result, scenario) {
   const isBlocked = result.status === 'blocked' || result.status === 'fallback';
   banner.className = 'status-banner ' + (isBlocked ? 'status-blocked' : 'status-approved');
   banner.innerHTML = isBlocked ? '🚫 BLOCKED' : '✅ APPROVED';
-  banner.innerHTML += '<br><span style="font-size:13px;font-weight:400;">' + result.message + '</span>';
+  banner.innerHTML += '<br><span style="font-size:13px;font-weight:400;">' + esc(result.message) + '</span>';
 
   document.getElementById('detail-action').textContent = scenario.name + ' (' + JSON.stringify(scenario.params) + ')';
   document.getElementById('detail-source').textContent = scenario.source;
@@ -351,10 +358,10 @@ function displayResult(result, scenario) {
   const failed = result.failed_rules || [];
   let rulesHtml = '';
   passed.forEach(r => {
-    rulesHtml += `<div class="rule-item rule-pass"><span class="rule-icon">✅</span> ${r}</div>`;
+    rulesHtml += `<div class="rule-item rule-pass"><span class="rule-icon">✅</span> ${esc(r)}</div>`;
   });
   failed.forEach(r => {
-    rulesHtml += `<div class="rule-item rule-fail"><span class="rule-icon">❌</span> ${r}</div>`;
+    rulesHtml += `<div class="rule-item rule-fail"><span class="rule-icon">❌</span> ${esc(r)}</div>`;
   });
   rulesList.innerHTML = rulesHtml;
 
@@ -362,7 +369,7 @@ function displayResult(result, scenario) {
   if (result.fallback_action) {
     fallbackBox.style.display = 'block';
     document.getElementById('fallback-detail').innerHTML =
-      `<strong>Action:</strong> ${result.fallback_action.name}<br><strong>Params:</strong> ${JSON.stringify(result.fallback_action.params)}<br><strong>Reason:</strong> ${result.message}`;
+      `<strong>Action:</strong> ${esc(result.fallback_action.name)}<br><strong>Params:</strong> ${esc(JSON.stringify(result.fallback_action.params))}<br><strong>Reason:</strong> ${esc(result.message)}`;
   } else {
     fallbackBox.style.display = 'none';
   }
@@ -375,8 +382,8 @@ async function loadRules() {
   const data = await res.json();
   document.getElementById('rules-container').innerHTML = data.rules.map(r =>
     `<div class="rule-item"><span class="rule-icon">${r.severity === 'block' ? '🛑' : '⚠️'}</span>
-      <div><div style="font-weight:600;">${r.name}</div><div style="font-size:12px;color:#64748b;">${r.message}</div></div>
-      <span style="margin-left:auto;font-size:11px;padding:2px 8px;border-radius:4px;background:${r.severity==='block'?'rgba(239,68,68,0.15)':'rgba(234,179,8,0.15)'};color:${r.severity==='block'?'#fca5a5':'#fcd34d'};">${r.severity}</span>
+      <div><div style="font-weight:600;">${esc(r.name)}</div><div style="font-size:12px;color:#64748b;">${esc(r.message)}</div></div>
+      <span style="margin-left:auto;font-size:11px;padding:2px 8px;border-radius:4px;background:${r.severity==='block'?'rgba(239,68,68,0.15)':'rgba(234,179,8,0.15)'};color:${r.severity==='block'?'#fca5a5':'#fcd34d'};">${esc(r.severity)}</span>
     </div>`
   ).join('');
 }
@@ -394,15 +401,15 @@ async function loadTrace() {
     if (e.event === 'outcome') cls += ' outcome-' + e.outcome;
     let detail = '';
     if (e.event === 'validation') {
-      detail = `Action: ${e.action.name} | Status: ${e.status} | Passed: ${e.passed_rules.length} | Failed: ${e.failed_rules.length}`;
+      detail = `Action: ${esc(e.action.name)} | Status: ${esc(e.status)} | Passed: ${e.passed_rules.length} | Failed: ${e.failed_rules.length}`;
     } else if (e.event === 'fallback') {
-      detail = `Trigger: ${e.trigger} | Strategy: ${e.strategy} | Fallback: ${e.fallback_action.name}`;
+      detail = `Trigger: ${esc(e.trigger)} | Strategy: ${esc(e.strategy)} | Fallback: ${esc(e.fallback_action.name)}`;
     } else if (e.event === 'outcome') {
-      detail = `${e.action} → ${e.outcome} ${e.detail ? '— ' + e.detail : ''}`;
+      detail = `${esc(e.action)} → ${esc(e.outcome)} ${e.detail ? '— ' + esc(e.detail) : ''}`;
     } else {
-      detail = JSON.stringify(e).substring(0, 200);
+      detail = esc(JSON.stringify(e).substring(0, 200));
     }
-    return `<div class="${cls}"><div class="trace-event">${e.event.toUpperCase()}</div><div class="trace-time">${new Date(e.timestamp * 1000).toLocaleTimeString()}</div><div style="margin-top:4px;">${detail}</div></div>`;
+    return `<div class="${cls}"><div class="trace-event">${esc(e.event.toUpperCase())}</div><div class="trace-time">${new Date(e.timestamp * 1000).toLocaleTimeString()}</div><div style="margin-top:4px;">${detail}</div></div>`;
   }).join('');
 }
 
